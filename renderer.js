@@ -382,11 +382,6 @@ window.__bdgPluginRegister(function activate(api) {
     },
   });
 
-  api.ui.registerAction({
-    label: { zh: "Phira 谱面转换设置", en: "Phira Converter Settings" },
-    run: function () { panel.open(); },
-  });
-
   api.ui.registerShortcut({
     id: "toggle-phira-convert",
     label: { zh: "切换 Phira 转换面板", en: "Toggle Phira converter panel" },
