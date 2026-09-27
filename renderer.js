@@ -11,6 +11,32 @@ window.__bdgPluginRegister(function activate(api) {
   var illPathLabel = null;
   var logEl = null;
 
+  // 面板样式：优先使用宿主主题变量 --bdg-*，并带浅/深色都可用的回退值
+  var CSS = [
+    ".phira-wrap{display:flex;flex-direction:column;gap:10px;padding:10px 12px;font-size:12px;line-height:1.5;color:var(--bdg-text,#e6ebf2)}",
+    ".phira-tip{padding:7px 10px;border-radius:7px;line-height:1.5;background:rgb(var(--bdg-accent-rgb,56 189 248)/.1);border:1px solid rgb(var(--bdg-accent-rgb,56 189 248)/.28)}",
+    ".phira-check{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;padding:7px 9px;border-radius:7px;border:1px solid var(--bdg-border,rgba(148,163,184,.14));background:rgb(var(--bdg-neutral,148 163 184)/.06)}",
+    ".phira-check input{flex:none;width:14px;height:14px;margin:0;accent-color:var(--bdg-accent,#38bdf8);cursor:pointer}",
+    ".phira-hint{font-size:11px;color:var(--bdg-text-dim,#8b97a8)}",
+    ".phira-sep{display:flex;align-items:center;gap:8px;margin-top:2px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--bdg-text-dim,#8b97a8)}",
+    ".phira-sep::after{content:\"\";flex:1;height:1px;background:var(--bdg-border,rgba(148,163,184,.14))}",
+    ".phira-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}",
+    ".phira-field{display:flex;flex-direction:column;gap:4px;min-width:0}",
+    ".phira-field-label{font-size:11px;color:var(--bdg-text-dim,#8b97a8)}",
+    ".phira-field input{width:100%;box-sizing:border-box;padding:5px 8px;border-radius:6px;border:1px solid var(--bdg-border-strong,rgba(148,163,184,.28));background:var(--bdg-bg-sunken,#10131a);color:var(--bdg-text,#e6ebf2);font:inherit;outline:none;transition:border-color .12s,box-shadow .12s}",
+    ".phira-field input:focus{border-color:var(--bdg-accent,#38bdf8);box-shadow:0 0 0 2px rgb(var(--bdg-accent-rgb,56 189 248)/.25)}",
+    ".phira-field input::placeholder{color:var(--bdg-text-faint,rgba(148,163,184,.35))}",
+    ".phira-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}",
+    ".phira-btn{appearance:none;cursor:pointer;font:inherit;padding:6px 12px;border-radius:7px;border:1px solid var(--bdg-border-strong,rgba(148,163,184,.28));background:rgb(var(--bdg-neutral,148 163 184)/.1);color:var(--bdg-text,#e6ebf2);transition:background .12s,border-color .12s}",
+    ".phira-btn:hover{background:rgb(var(--bdg-neutral,148 163 184)/.18)}",
+    ".phira-btn:active{transform:translateY(1px)}",
+    ".phira-btn-primary{border-color:var(--bdg-accent,#38bdf8);background:rgb(var(--bdg-accent-rgb,56 189 248)/.16);color:var(--bdg-accent,#38bdf8);font-weight:600}",
+    ".phira-btn-primary:hover{background:rgb(var(--bdg-accent-rgb,56 189 248)/.26)}",
+    ".phira-path{flex:1 1 120px;min-width:0;font-size:11px;color:var(--bdg-text-dim,#8b97a8);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+    ".phira-log{max-height:150px;overflow:auto;margin:0;padding:8px 9px;border-radius:7px;border:1px solid var(--bdg-border,rgba(148,163,184,.14));background:var(--bdg-bg-sunken,#10131a);color:var(--bdg-text-dim,#8b97a8);font:11px/1.5 \"Cascadia Mono\",\"Consolas\",monospace;white-space:pre-wrap;word-break:break-word}",
+    ".phira-log:empty{display:none}",
+  ].join("\n");
+
   function log(msg) {
     api.log(msg);
     if (logEl) {
@@ -31,13 +57,13 @@ window.__bdgPluginRegister(function activate(api) {
     return n;
   }
 
-  function inputField(host, labelText, value) {
-    var block = el("div", "phira-field");
-    var lab = el("div", "phira-field-label", labelText);
+  function inputField(host, labelText, value, placeholder) {
+    var block = el("label", "phira-field");
+    block.appendChild(el("span", "phira-field-label", labelText));
     var inp = document.createElement("input");
     inp.type = "text";
     if (value) inp.value = value;
-    block.appendChild(lab);
+    if (placeholder) inp.placeholder = placeholder;
     block.appendChild(inp);
     host.appendChild(block);
     return inp;
@@ -257,6 +283,10 @@ window.__bdgPluginRegister(function activate(api) {
     mount: function mount(host) {
       host.textContent = "";
 
+      var style = document.createElement("style");
+      style.textContent = CSS;
+      host.appendChild(style);
+
       var s = api.project.snapshot();
 
       var wrap = el("div", "phira-wrap");
@@ -266,7 +296,7 @@ window.__bdgPluginRegister(function activate(api) {
       tip.textContent = "放置 Tap 踩点后导出：每个踩点 = 一个 Tap 音符。";
       wrap.appendChild(tip);
 
-      var row = el("label", "phira-row");
+      var row = el("label", "phira-check");
       var chk = el("input");
       chk.type = "checkbox";
       chk.checked = mergeMode;
@@ -275,7 +305,7 @@ window.__bdgPluginRegister(function activate(api) {
         syncHint();
       });
       row.appendChild(chk);
-      row.appendChild(document.createTextNode("合并成单轨（一条判定线，Tap 居中 X=0）"));
+      row.appendChild(el("span", null, "合并成单轨（一条判定线，Tap 居中 X=0）"));
       wrap.appendChild(row);
 
       var hint = el("div", "phira-hint");
@@ -285,11 +315,13 @@ window.__bdgPluginRegister(function activate(api) {
       var sep1 = el("div", "phira-sep", "META 元信息");
       wrap.appendChild(sep1);
 
-      nameInput = inputField(wrap, "曲名", s.name || "");
-      levelInput = inputField(wrap, "难度", "");
-      charterInput = inputField(wrap, "谱师", "");
-      composerInput = inputField(wrap, "编曲", "");
-      illustratorInput = inputField(wrap, "曲绘作者", "");
+      var grid = el("div", "phira-grid");
+      wrap.appendChild(grid);
+      nameInput = inputField(grid, "曲名", s.name || "", "歌曲名");
+      levelInput = inputField(grid, "难度", "", "如 15");
+      charterInput = inputField(grid, "谱师", "", "谱面作者");
+      composerInput = inputField(grid, "编曲", "", "艺术家");
+      illustratorInput = inputField(grid, "曲绘作者", "", "画师");
 
       var sep2 = el("div", "phira-sep", "曲绘（配图）");
       wrap.appendChild(sep2);
@@ -305,17 +337,29 @@ window.__bdgPluginRegister(function activate(api) {
           .then(function (p) {
             if (!p) return;
             illustrationPath = p;
-            if (illPathLabel) illPathLabel.textContent = illustrationPath;
+            if (illPathLabel) {
+              illPathLabel.textContent = illustrationPath;
+              illPathLabel.title = illustrationPath;
+            }
             log("已选曲绘: " + illustrationPath);
           })
           .catch(logError);
       });
       illRow.appendChild(btnIll);
-      illPathLabel = el("span", "phira-path", illustrationPath);
+      illPathLabel = el("span", "phira-path", illustrationPath || "未选择");
+      illPathLabel.title = illustrationPath || "";
       illRow.appendChild(illPathLabel);
       wrap.appendChild(illRow);
 
-      var btnExport = el("button", "phira-btn", "生成并导出 .pez");
+      var stat = el("div", "phira-hint");
+      function refreshStat() {
+        stat.textContent = "当前踩点：" + api.project.snapshot().markers.length + " 个";
+      }
+      refreshStat();
+      var offProject = api.events.on("project", refreshStat);
+      wrap.appendChild(stat);
+
+      var btnExport = el("button", "phira-btn phira-btn-primary", "生成并导出 .pez");
       btnExport.addEventListener("click", exportChart);
       wrap.appendChild(btnExport);
 
@@ -330,7 +374,11 @@ window.__bdgPluginRegister(function activate(api) {
       }
       syncHint();
 
-      return function unmount() { host.textContent = ""; logEl = null; };
+      return function unmount() {
+        if (offProject) offProject();
+        host.textContent = "";
+        logEl = null;
+      };
     },
   });
 
