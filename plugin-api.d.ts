@@ -129,6 +129,11 @@ interface PluginApi {
       moveMarker: (id: string, beat: number) => boolean;
       removeMarker: (id: string) => void;
       setMarkerAttrs: (id: string, attrs: Record<string, unknown>) => void;
+      /** Set a main marker's loop group config (undo aware); null clears it. */
+      setMarkerLoop: (
+        id: string,
+        cfg: { interval: number; count: number; exclude?: number[] } | null,
+      ) => void;
       addBpmPoint: (beat: number) => string | null;
       removeBpmPoint: (id: string) => void;
       setBaseBpm: (v: number) => void;
@@ -211,8 +216,6 @@ interface PluginApi {
       path: string,
     ) => Promise<{ canceled: boolean; filePath?: string; content?: string }>;
     writeText: (path: string, content: string) => Promise<boolean>;
-    /** Absolute path to the current project's audio file, or null if none. */
-    audioPath: () => string | null;
     openWindow: (opts: {
       url: string;
       title?: string;
@@ -220,6 +223,8 @@ interface PluginApi {
       height?: number;
     }) => Promise<void>;
     openPluginsFolder: () => Promise<void>;
+    /** Absolute filesystem path of the loaded audio, or null when none. */
+    audioPath: () => string | null;
   };
 
   /** Route a free-form call to this plugin's main.js handler. */
