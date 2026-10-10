@@ -1,6 +1,7 @@
 {
   "id": "dev.bdg.phira-converter",
-  "version": "0.2.0",
+  "version": "0.3.0",
+  "apiVersion": 2,
   "name": {
     "zh": "Phira 谱面转换器",
     "en": "Phira Chart Converter"
